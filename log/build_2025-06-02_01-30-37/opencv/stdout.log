@@ -1,0 +1,22 @@
+[35m[1mConsolidate compiler generated dependencies of target minimal_opencv_ros2_node[0m
+[ 50%] [32mBuilding CXX object CMakeFiles/minimal_opencv_ros2_node.dir/src/minimal_opencv_ros2_node.cpp.o[0m
+[100%] [32m[1mLinking CXX executable minimal_opencv_ros2_node[0m
+[100%] Built target minimal_opencv_ros2_node
+-- Install configuration: ""
+-- Installing: /home/om/ardu_ws/install/opencv/lib/opencv/minimal_opencv_ros2_node
+-- Set runtime path of "/home/om/ardu_ws/install/opencv/lib/opencv/minimal_opencv_ros2_node" to ""
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/ament_index/resource_index/package_run_dependencies/opencv
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/ament_index/resource_index/parent_prefix_path/opencv
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/environment/ament_prefix_path.sh
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/environment/ament_prefix_path.dsv
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/environment/path.sh
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/environment/path.dsv
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/local_setup.bash
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/local_setup.sh
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/local_setup.zsh
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/local_setup.dsv
+-- Installing: /home/om/ardu_ws/install/opencv/share/opencv/package.dsv
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/ament_index/resource_index/packages/opencv
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/cmake/opencvConfig.cmake
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/cmake/opencvConfig-version.cmake
+-- Up-to-date: /home/om/ardu_ws/install/opencv/share/opencv/package.xml
