@@ -1,6 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "std_msgs/msg/header.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include <chrono>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
@@ -11,7 +12,7 @@ class MinimalImagePublisher : public rclcpp::Node {
 public:
   MinimalImagePublisher() : Node("opencv_image_publisher"), count_(0) {
     publisher_ = this->create_publisher<sensor_msgs::msg::Image>("random_image", 10);
-
+    center_pub_ = this->create_publisher<geometry_msgs::msg::Point>("yellow_center", 10);
     std::string video_path = "/home/om/ardu_ws/src/opencv/src/greenplantsyellow.mp4";
     cap_.open(video_path);
 
@@ -39,7 +40,7 @@ private:
     while (rclcpp::ok()) {
       cv::Mat frame;
       cap_ >> frame;
-
+                                                                                                                                                        
       if (frame.empty()) {
         RCLCPP_INFO(this->get_logger(), "End of video reached.");
         break;
@@ -71,6 +72,12 @@ private:
         int cy = box.y + box.height / 2;
         cv::circle(frame, cv::Point(cx, cy), 5, cv::Scalar(0, 0, 255), -1);
         RCLCPP_INFO(this->get_logger(), "Yellow box center: (%d, %d)", cx, cy);
+
+        geometry_msgs::msg::Point center_msg;
+        center_msg.x = static_cast<double>(cx);
+        center_msg.y = static_cast<double>(cy);
+        center_msg.z = 0.0;
+        center_pub_->publish(center_msg);
       }
 
       // Convert and publish
@@ -87,6 +94,7 @@ private:
   }
 
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr center_pub_;
   size_t count_;
   cv::VideoCapture cap_;
   int frame_delay_;
