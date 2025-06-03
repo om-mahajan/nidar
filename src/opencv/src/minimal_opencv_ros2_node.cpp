@@ -3,7 +3,6 @@
 #include "std_msgs/msg/header.hpp"
 #include <chrono>
 #include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.hpp>
 #include <opencv2/opencv.hpp>
 
 using namespace std::chrono_literals;
@@ -11,60 +10,93 @@ using namespace std::chrono_literals;
 class MinimalImagePublisher : public rclcpp::Node {
 public:
   MinimalImagePublisher() : Node("opencv_image_publisher"), count_(0) {
-    publisher_ =
-        this->create_publisher<sensor_msgs::msg::Image>("random_image", 10);
-    timer_ = this->create_wall_timer(
-        500ms, std::bind(&MinimalImagePublisher::timer_callback, this));
+    publisher_ = this->create_publisher<sensor_msgs::msg::Image>("random_image", 10);
+
+    std::string video_path = "/home/om/ardu_ws/src/opencv/src/greenplantsyellow.mp4";
+    cap_.open(video_path);
+
+    if (!cap_.isOpened()) {
+      RCLCPP_ERROR(this->get_logger(), "Failed to open video file at %s", video_path.c_str());
+      return;
+    }
+
+    double fps = cap_.get(cv::CAP_PROP_FPS);
+    if (fps <= 0) fps = 25.0;
+    frame_delay_ = static_cast<int>(1000.0 / fps);
+
+    // Start video processing in a new thread
+    video_thread_ = std::thread(&MinimalImagePublisher::process_video, this);
+  }
+
+  ~MinimalImagePublisher() {
+    if (video_thread_.joinable()) {
+      video_thread_.join();
+    }
   }
 
 private:
-  void timer_callback() {
-  // Load your image from file (replace with your actual path)
-  std::string image_path = "/home/om/ardu_ws/src/opencv/src/p1.jpeg";
-  cv::Mat my_image = cv::imread(image_path);
+  void process_video() {
+    while (rclcpp::ok()) {
+      cv::Mat frame;
+      cap_ >> frame;
 
-  // Convert to HSV
-  cv::Mat hsv_image;
-  cv::cvtColor(my_image, hsv_image, cv::COLOR_BGR2HSV);
+      if (frame.empty()) {
+        RCLCPP_INFO(this->get_logger(), "End of video reached.");
+        break;
+      }
 
-  // Yellow range in HSV
-  cv::Scalar lower_yellow(20, 100, 100);
-  cv::Scalar upper_yellow(30, 255, 255);
-  cv::Mat yellow_mask;
-  cv::inRange(hsv_image, lower_yellow, upper_yellow, yellow_mask);
+      // Convert to HSV
+      cv::Mat hsv_image;
+      cv::cvtColor(frame, hsv_image, cv::COLOR_BGR2HSV);
 
-  // Find contours
-  std::vector<std::vector<cv::Point>> contours;
-  cv::findContours(yellow_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+      // Yellow range in HSV
+      cv::Scalar lower_yellow(15,  70,  70);
+      cv::Scalar upper_yellow(35, 255, 255);
+      
+      /* cv::Scalar lower_yellow(20, 100, 100); slightly narrower range
+      cv::Scalar upper_yellow(30, 255, 255); */
+      
+      cv::Mat yellow_mask;
+      cv::inRange(hsv_image, lower_yellow, upper_yellow, yellow_mask);
 
-  // Draw bounding boxes around yellow regions
-  for (const auto& contour : contours) {
-    if (cv::contourArea(contour) < 100) continue; // Ignore noise
-    cv::Rect box = cv::boundingRect(contour);
-    cv::rectangle(my_image, box, cv::Scalar(255, 0, 0), 2); // Blue box
+      // Find contours
+      std::vector<std::vector<cv::Point>> contours;
+      cv::findContours(yellow_mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+      for (const auto &contour : contours) {
+        if (cv::contourArea(contour) < 100) continue;
+        cv::Rect box = cv::boundingRect(contour);
+        cv::rectangle(frame, box, cv::Scalar(255, 0, 0), 2);
+        int cx = box.x + box.width / 2;
+        int cy = box.y + box.height / 2;
+        cv::circle(frame, cv::Point(cx, cy), 5, cv::Scalar(0, 0, 255), -1);
+        RCLCPP_INFO(this->get_logger(), "Yellow box center: (%d, %d)", cx, cy);
+      }
+
+      // Convert and publish
+      std_msgs::msg::Header header;
+      header.stamp = this->now();
+      auto msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+      publisher_->publish(*msg);
+
+      count_++;
+      std::this_thread::sleep_for(std::chrono::milliseconds(frame_delay_));
+    }
+
+    rclcpp::shutdown(); // Stop node once video ends
   }
 
-  // Convert and publish
-  std_msgs::msg::Header header;
-  header.stamp = this->now();
-  auto msg = cv_bridge::CvImage(header, "bgr8", my_image).toImageMsg();
-
-  publisher_->publish(*msg);
-  RCLCPP_INFO(this->get_logger(), "Image %ld published with yellow detection", count_);
-  count_++;
-  }
-  rclcpp::TimerBase::SharedPtr timer_;
-  sensor_msgs::msg::Image::SharedPtr msg_;
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
   size_t count_;
+  cv::VideoCapture cap_;
+  int frame_delay_;
+  std::thread video_thread_;
 };
+
 
 int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
-  // create a ros2 node
-  auto node = std::make_shared<MinimalImagePublisher>();
-  // process ros2 callbacks until receiving a SIGINT (ctrl-c)
-  rclcpp::spin(node);
+  rclcpp::spin(std::make_shared<MinimalImagePublisher>());
   rclcpp::shutdown();
   return 0;
 }
