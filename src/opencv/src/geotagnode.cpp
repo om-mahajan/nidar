@@ -22,10 +22,10 @@ class GeotagNode : public rclcpp::Node {
 public:
   GeotagNode() : Node("geotagnode") {
     yellow_sub_ = this->create_subscription<geometry_msgs::msg::Point>(
-        "yellow_box_center", 10,
+        "yellow_center", 10,
         std::bind(&GeotagNode::yellow_callback, this, std::placeholders::_1));
 
-    gps_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
+    /* gps_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
         "/gps", 10,
         [this](sensor_msgs::msg::NavSatFix::SharedPtr msg) {
           gps_latitude_ = msg->latitude;
@@ -36,7 +36,7 @@ public:
         "/altitude", 10,
         [this](std_msgs::msg::Float64::SharedPtr msg) {
           gps_altitude_ = msg->data;
-        });
+        }); */
 
     // Simulated fallback values
     gps_latitude_ = 37.7749;
