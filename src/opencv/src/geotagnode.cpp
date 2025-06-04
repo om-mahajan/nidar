@@ -20,7 +20,7 @@ struct GeotaggedPoint {
 
 class GeotagNode : public rclcpp::Node {
 public:
-  GeotagNode() : Node("geotag_node") {
+  GeotagNode() : Node("geotagnode") {
     yellow_sub_ = this->create_subscription<geometry_msgs::msg::Point>(
         "yellow_box_center", 10,
         std::bind(&GeotagNode::yellow_callback, this, std::placeholders::_1));
